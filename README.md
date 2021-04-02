@@ -2,17 +2,17 @@
 
 <!--- ![alt text](https://alpinesherpa.com/wp-content/uploads/2016/06/traffic-header.jpg) --->
 
-## Project name
-###### This is an <h6> tag
+## Project Name
+###### Predicting Traffic Patterns at Road Junctions
   
 
 ## Description
-###### This is an <h6> tag
+###### In this project, we are predicting traffic patterns in each of these four junctions for the next 4 months.
   
 
 ## Installation
-###### This is an <h6> tag
+###### To install this project, ...
   
 
 ## Usage
-###### This is an <h6> tag
+###### This is how to use the project after installation
