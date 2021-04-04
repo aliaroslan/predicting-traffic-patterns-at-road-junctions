@@ -104,7 +104,7 @@ with dataSet:
 
     st.write(fig_dataset)
     
-    with modelTraining_lstm:
+with modelTraining_lstm:
     st.header('Model training: LSTM')
     # st.text('LSTM model was used...')
 
