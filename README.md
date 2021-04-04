@@ -22,7 +22,7 @@
 * $ pip install scikit_learn
 * $ pip install torchsummaryX
 
-##### 2. Get the application file (main.py), (traffic-header.jpg) and dataset file (train_ML_IOT.csv) in one folder
+##### 2. Get the application files (main.py), (data_module.py), (deep_learning_module.py), image file (traffic-header.jpg) and dataset file (train_ML_IOT.csv) in one folder
 ##### 3. Open command prompt and run
 * $streamlit run main.py
   
