@@ -122,9 +122,245 @@ st.write(fig_dataset)
 
 def arima_ui():
     with st.beta_container():
+        st.set_option('deprecation.showPyplotGlobalUse', False)
         st.title('ARIMA Analysis')
         st.header('Junction 1')
+        traffic = pd.read_csv("C:/Users/vimal/Projects/time-series-labs/datasets/traffic/train_ML_IOT.csv")
+        traffic.head()
+        traffic_junction1 = traffic.loc[traffic["Junction"] == 1]
+        traffic_junction2 = traffic.loc[traffic["Junction"] == 2]
+        traffic_junction3 = traffic.loc[traffic["Junction"] == 3]
+        traffic_junction4 = traffic.loc[traffic["Junction"] == 4]
+        new_traffic = traffic.set_index(pd.to_datetime(traffic["DateTime"]))
+        new_traffic = new_traffic.drop(columns = ['DateTime','ID'])
+        traffic_junction1 = new_traffic.loc[new_traffic["Junction"] == 1]
+        traffic_junction2 = new_traffic.loc[new_traffic["Junction"] == 2]
+        traffic_junction3 = new_traffic.loc[new_traffic["Junction"] == 3]
+        traffic_junction4 = new_traffic.loc[new_traffic["Junction"] == 4]
+        traffic_merge = traffic_junction1.merge(traffic_junction2,how='left', left_on='DateTime', right_on='DateTime')
+        traffic_merge.rename(columns={'Vehicles_x': 'Junction_1', 'Vehicles_y': 'Junction_2'}, inplace=True)
+        traffic_merge = traffic_merge.merge(traffic_junction3,how='left', left_on='DateTime', right_on='DateTime')
+        traffic_merge = traffic_merge.merge(traffic_junction4,how='left', left_on='DateTime', right_on='DateTime')
+        traffic_merge.rename(columns={'Vehicles_x': 'Junction_3', 'Vehicles_y': 'Junction_4'}, inplace=True)
+        traffic_merge = traffic_merge.drop(columns = ['Junction_x','Junction_y'])
+        traffic_merge['Junction_1'] = traffic_merge['Junction_1'].astype(float)
+        traffic_merge['Junction_2'] = traffic_merge['Junction_2'].astype(float)
+        traffic_merge['Junction_3'] = traffic_merge['Junction_3'].astype(float)
+        traffic_merge['Junction_4'] = traffic_merge['Junction_4'].astype(float)
+        traffic_merge['Junction_4'] = traffic_merge['Junction_4'].fillna(0)
+        traffic_1 = traffic_merge['Junction_1']
+        traffic_1_resample = traffic_merge['Junction_1'].resample('D').mean()
+        split_data = round(len(traffic_1_resample)*0.3)
+        train_data_1 = traffic_1_resample[:-split_data]
+        test_data_1 = traffic_1_resample[-split_data:]
+        train_time_1 = traffic_1_resample.index[:-split_data]
+        test_time_1 = traffic_1_resample.index[-split_data:]
+        train_data_1.plot(figsize=(20,10))
+        plt.xlabel("DateTime")
+        plt.ylabel("Vehicles")
+        plt.show()
+        st.pyplot()
+        def print_adf_result(adf_result):
+            df_results = pd.Series(adf_result[0:4], index=['ADF Test Statistic','P-Value','# Lags Used','# Observations Used'])
+            
+            for key, value in adf_result[4].items():
+                df_results['Critical Value (%s)'% key] = value
+            print('Augmented Dickey-Fuller Test Results:')
+            print(df_results)
+        result_1 = adfuller(train_data_1, maxlag=7)
+        print_adf_result(result_1)
+        decomposition = sm.tsa.seasonal_decompose(train_data_1, model='multiplicative')
+        fig = decomposition.plot()
+        plt.show()
+        st.pyplot()
+        # seasonal differencing
+        traffic_season_diff_train_1 = train_data_1.diff(7)
 
+        # plot time plot
+        plt.figure(figsize=(14,7))
+        plt.grid()
+        plt.plot(traffic_season_diff_train_1)
+        plt.title('traffic junction 1')
+        plt.show()
+        st.pyplot()
+        st.write(print_adf_result(adfuller(traffic_season_diff_train_1.dropna())))
+        plot_acf(traffic_season_diff_train_1.dropna(), lags=range(0,16))
+        plt.show()
+        st.pyplot()
+        plot_pacf(traffic_season_diff_train_1.dropna(), lags=range(0,16))
+        plt.show()
+        st.pyplot()
+        # fitting ARIMA(0,0,0) model
+        arima_000_1 = ARIMA(traffic_season_diff_train_1.dropna(), order=(0,0,0)).fit()
+        arima_000_1.summary()
+        # fitting ARIMA(1,0,1) model
+        arima_100_1 = ARIMA(traffic_season_diff_train_1.dropna(), order=(1,0,0)).fit()
+        arima_100_1.summary()
+        residuals_1 = pd.Series(arima_100_1.resid)
+        def check_residuals(series):
+            fig = plt.figure(figsize=(16, 8))    
+            gs = fig.add_gridspec(2,2)
+            ax1 = fig.add_subplot(gs[0, :])
+            ax1.plot(series)
+            ax1.set_title('residuals')
+            
+            ax2 = fig.add_subplot(gs[1,0])
+            plot_acf(series, ax=ax2, title='ACF')
+            
+            ax3 = fig.add_subplot(gs[1,1])
+            sns.kdeplot(series, ax=ax3)
+            ax3.set_title('density')
+            
+            plt.show()
+            st.pyplot()
+            
+        check_residuals(residuals_1)
+        arima_100_1.forecast(1)
+        arima_forecast_1, se_1, conf_1 = arima_100_1.forecast(182)
+
+        arima_forecast_1 = pd.Series(arima_forecast_1, index=test_data_1.index)
+        lower_series_1 = pd.Series(conf_1[:, 0], index=test_data_1.index)
+        upper_series_1 = pd.Series(conf_1[:, 1], index=test_data_1.index)
+        plt.plot(traffic_season_diff_train_1, label='train')
+        plt.plot(arima_forecast_1, label='forecast')
+        plt.show()
+        st.pyplot()
+
+        plt.fill_between(lower_series_1.index, lower_series_1, upper_series_1, color='k', alpha=.15)
+        plt.legend()
+        def inverse_differencing(orig_data, diff_data, interval):
+            output = orig_data[:interval].tolist()
+            for i in range(interval, len(diff_data)):
+                output.append(output[i-interval] + diff_data[i])
+            return output
+
+        def inverse_differencing_forecast(orig_series, diff_series, forecast_series, interval):
+            series_merge = diff_series.append(forecast_series)
+            inverse_diff_series = pd.Series(inverse_differencing(orig_series, series_merge, interval), 
+                                            index=series_merge.index)
+            return inverse_diff_series[-len(forecast_series):]
+
+        def train_test_forecast_plot(train_series, test_series, forecast_series, lower_upper=None):
+            plt.plot(train_series, label = 'train')
+            plt.plot(test_series, label = 'test')
+            plt.plot(forecast_series, label = 'forecast')
+
+            if lower_upper is not None:
+                plt.fill_between(lower_upper[0].index, lower_upper[0], 
+                            lower_upper[1], color='k', alpha=.15)
+            plt.legend()
+            plt.show()
+            st.pyplot()
+        # inverse differenced series back to original series
+        traffic_forecast_series_1 = inverse_differencing_forecast(train_data_1, traffic_season_diff_train_1, arima_forecast_1, 7)
+        traffic_lower_series_1 = inverse_differencing_forecast(train_data_1, traffic_season_diff_train_1, lower_series_1, 7)
+        traffic_upper_series_1 = inverse_differencing_forecast(train_data_1, traffic_season_diff_train_1, upper_series_1, 7)
+        train_test_forecast_plot(train_data_1, test_data_1, traffic_forecast_series_1, 
+                         [traffic_lower_series_1, traffic_upper_series_1])
+        from sklearn.metrics import mean_squared_error
+
+        mse_1 = mean_squared_error(test_data_1, traffic_forecast_series_1)
+        param_p = [0,1,2,3,4,5]
+        param_d = [0,1,2] # ARIMA only support two times of differencing
+        param_q = [0,1,2,3,4,5]
+        best_error, best_params, best_model = None, None, None
+
+        for p in param_p:
+            for d in param_d:
+                for q in param_q:
+                    try:
+                        arima = ARIMA(traffic_season_diff_train_1.dropna(), order=(p,d,q)).fit()
+                        if best_error is None or arima.aic < best_error:
+                            best_error = arima.aic
+                            best_params = (p,d,q)
+                            best_model = arima
+                        #print('ARIMA({},{},{}), AIC={}'.format(p,d,q, arima.aic))
+                    except:
+                        pass
+        st.write('Best Error={}, Best Params={}'.format(best_error, best_params))
+
+        arima_forecast_1, se_1, conf_1 = best_model.forecast(182)
+
+        arima_forecast_1 = pd.Series(arima_forecast_1, index=test_data_1.index)
+        lower_series_1 = pd.Series(conf_1[:, 0], index=test_data_1.index)
+        upper_series_1 = pd.Series(conf_1[:, 1], index=test_data_1.index)
+        traffic_forecast_series_1 = inverse_differencing_forecast(train_data_1, traffic_season_diff_train_1, arima_forecast_1, 7)
+        traffic_lower_series_1 = inverse_differencing_forecast(train_data_1, traffic_season_diff_train_1, lower_series_1, 7)
+        traffic_upper_series_1 = inverse_differencing_forecast(train_data_1, traffic_season_diff_train_1, upper_series_1, 7)
+        
+        train_test_forecast_plot(train_data_1, test_data_1, traffic_forecast_series_1, 
+                                [traffic_lower_series_1, traffic_upper_series_1])
+        mse_1 = mean_squared_error(test_data_1, traffic_forecast_series_1)
+        print('Test MSE 1: ', mse_1)
+        import math
+        RMSE_1 = math.sqrt(mse_1)
+        st.write('Root Mean Square Error 1:\n'+RMSE_1)
+
+        st.header('Junction 2')
+
+        traffic_2 = traffic_merge['Junction_2']
+        traffic_2_resample = traffic_merge['Junction_2'].resample('D').mean()
+        train_data_2 = traffic_2_resample[:-split_data]
+        test_data_2 = traffic_2_resample[-split_data:]
+        train_time_2 = traffic_2_resample.index[:-split_data]
+        test_time_2 = traffic_2_resample.index[-split_data:]
+
+        train_data_2.plot(figsize=(20,10))
+        plt.xlabel("DateTime")
+        plt.ylabel("Vehicles")
+        plt.show()
+        st.pyplot()
+        result_2 = adfuller(train_data_2, maxlag=7)
+        print_adf_result(result_2)
+        decomposition = sm.tsa.seasonal_decompose(train_data_2, model='multiplicative')
+        fig = decomposition.plot()
+        plt.show()
+        st.pyplot()
+        # seasonal differencing
+        traffic_season_diff_train_2 = train_data_2.diff(7)
+
+        # plot time plot
+        plt.figure(figsize=(14,7))
+        plt.grid()
+        plt.plot(traffic_season_diff_train_2)
+        plt.title('traffic junction 2')
+        print_adf_result(adfuller(traffic_season_diff_train_2.dropna()))
+        plot_acf(traffic_season_diff_train_2.dropna(), lags=range(0,16))
+        plot_pacf(traffic_season_diff_train_2.dropna(), lags=range(0,16))
+        param_p = [0,1,2,3,4,5]
+        param_d = [0,1,2] # ARIMA only support two times of differencing
+        param_q = [0,1,2,3,4,5]
+        best_error, best_params, best_model = None, None, None
+
+        for p in param_p:
+            for d in param_d:
+                for q in param_q:
+                    try:
+                        arima = ARIMA(traffic_season_diff_train_2.dropna(), order=(p,d,q)).fit()
+                        if best_error is None or arima.aic < best_error:
+                            best_error = arima.aic
+                            best_params = (p,d,q)
+                            best_model = arima
+                        #print('ARIMA({},{},{}), AIC={}'.format(p,d,q, arima.aic))
+                    except:
+                        pass
+        print('Best Error={}, Best Params={}'.format(best_error, best_params))
+
+        arima_forecast_2, se_2, conf_2 = best_model.forecast(182)
+
+        arima_forecast_2 = pd.Series(arima_forecast_2, index=test_data_2.index)
+        lower_series_2 = pd.Series(conf_2[:, 0], index=test_data_2.index)
+        upper_series_2 = pd.Series(conf_2[:, 1], index=test_data_2.index)
+
+        traffic_forecast_series_2 = inverse_differencing_forecast(train_data_2, traffic_season_diff_train_2, arima_forecast_2, 7)
+        traffic_lower_series_2 = inverse_differencing_forecast(train_data_2, traffic_season_diff_train_2, lower_series_2, 7)
+        traffic_upper_series_2 = inverse_differencing_forecast(train_data_2, traffic_season_diff_train_2, upper_series_2, 7)
+        train_test_forecast_plot(train_data_2, test_data_2, traffic_forecast_series_2, 
+                         [traffic_lower_series_2, traffic_upper_series_2])
+        mse_2 = mean_squared_error(test_data_2, traffic_forecast_series_2)
+        RMSE_2 = math.sqrt(mse_2)
+        print("Root Mean Square Error 2:\n")
+        print(RMSE_2)
 
 def sarima_ui():
     with st.beta_container():
@@ -546,7 +782,7 @@ def LSTM_ui():
         st.pyplot()
 
 
-
+        st.header('Junction 2')
 
         traffic_merge = traffic_merge[['Junction_3', 'Junction_4', 'Junction_1', 'Junction_2']]
         traffic_merge.head()
@@ -724,7 +960,7 @@ def LSTM_ui():
         st.pyplot()
 
 
-
+        st.header('Junction 1')
 
         traffic_merge = traffic_merge[['Junction_2', 'Junction_3', 'Junction_4', 'Junction_1']]
         traffic_merge.head()
