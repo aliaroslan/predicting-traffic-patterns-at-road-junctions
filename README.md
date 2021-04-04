@@ -3,7 +3,7 @@
 <!--- ![alt text](https://alpinesherpa.com/wp-content/uploads/2016/06/traffic-header.jpg) --->
 
 ## Description
-###### In this project, we are predicting traffic patterns in each of these four junctions for the next 4 months. The dataset was taken from [Kaggle.com | Time Series in IOT (Internet of Things)](http://github.comhttps://www.kaggle.com/vetrirah/ml-iot?select=train_ML_IOT.csv)
+###### In this project, we are predicting traffic patterns in each of these four junctions for the next 4 months. The dataset was taken from [Kaggle.com | Time Series in IOT (Internet of Things)](https://www.kaggle.com/vetrirah/ml-iot?select=train_ML_IOT.csv)
 
 ## Installation
 ### Streamlit run on localhost
