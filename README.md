@@ -7,7 +7,23 @@
   
 
 ## Installation
-###### To install this project, ...
+### Streamlit run on localhost
+
+##### 1. Install dependecies
+* -$ pip install streamlit
+* -$ pip install matplotlib
+* -$ pip install statsmodels
+* -$ pip install torch
+* -$ pip install plotly
+* -$ pip install seaborn
+* -$ pip install pandas
+* -$ pip install numpy
+* -$ pip install scikit_learn
+* -$ pip install torchsummaryX
+
+##### 2. Get the application file (main.py) and dataset file (train_ML_IOT.csv) in one folder
+##### 3. Open command prompt and run
+* -$streamlit run main.py
   
 
 ## Usage
