@@ -28,4 +28,8 @@
   
 
 ## Usage
-###### This is how to use the project after installation
+###### 1. Download/clone the entire github repository
+* This repository consists of multiple forecasting ways to predict traffic patterns in each of the four junctions for the next 4 months. The best model can be found in the notebook LSTM Multi-Uni_Multistep Traffic Analysis.
+* Install the required dependencies based on the Installation instructions above.
+
+##### 2. Run main.py in terminal to showcase Streamlit running in localhost.
