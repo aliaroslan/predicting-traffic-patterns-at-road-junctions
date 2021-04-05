@@ -10,8 +10,9 @@
 ## Installation
 ### Streamlit run on localhost
 
-##### 1. Install dependecies
-* $ pip install streamlit
+##### 1. Install dependecies by running the code below in command prompt:
+`pip install -r requirements.txt`
+<!--- * $ pip install streamlit
 * $ pip install matplotlib
 * $ pip install statsmodels
 * $ pip install torch
@@ -20,11 +21,11 @@
 * $ pip install pandas
 * $ pip install numpy
 * $ pip install scikit_learn
-* $ pip install torchsummaryX
+* $ pip install torchsummaryX --->
 
 ##### 2. Get the application files (main.py), (data_module.py), (deep_learning_module.py), image file (traffic-header.jpg) and dataset file (train_ML_IOT.csv) in one folder
 ##### 3. Open command prompt and run
-* $streamlit run main.py
+`streamlit run main.py`
   
 
 ## Usage
@@ -32,4 +33,5 @@
 * This repository consists of multiple forecasting ways to predict traffic patterns in each of the four junctions for the next 4 months. The best model can be found in the notebook LSTM Multi-Uni_Multistep Traffic Analysis.ipynb
 * Install the required dependencies based on the Installation instructions above.
 
-##### 2. Run main.py in terminal to showcase Streamlit running in localhost.
+##### 2. Run main.py in terminal to showcase Streamlit running in localhost as shown below:
+`streamlit run main.py`
